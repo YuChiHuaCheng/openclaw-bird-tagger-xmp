@@ -1,0 +1,23 @@
+{
+    "name": "bird-tagger-ai",
+    "version": "1.0.0",
+    "description": "BirdTagger AI Openclaw/Moltbot Agent Skill",
+    "main": "index.js",
+    "type": "module",
+    "scripts": {
+        "start": "node index.js"
+    },
+    "dependencies": {
+        "dotenv": "^16.4.5",
+        "openai": "^4.28.0"
+    },
+    "keywords": [
+        "ai",
+        "bird",
+        "photography",
+        "exiftool",
+        "xmp"
+    ],
+    "author": "",
+    "license": "ISC"
+}

@@ -1,0 +1,6 @@
+node_modules/
+.env
+.DS_Store
+life_list.json
+*.tmp.jpg
+鸟类整理战报_*.html
