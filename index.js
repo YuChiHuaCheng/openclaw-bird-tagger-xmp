@@ -37,7 +37,10 @@ if (!openaiApiKey) {
     process.exit(1);
 }
 
-const openai = new OpenAI({ apiKey: openaiApiKey });
+const openai = new OpenAI({
+    apiKey: openaiApiKey,
+    baseURL: process.env.OPENAI_BASE_URL
+});
 
 // Allowed image extensions (RAW & JPG)
 const ALLOWED_EXTS = new Set(['.jpg', '.jpeg', '.cr2', '.cr3', '.arw', '.nef', '.dng', '.raf', '.orf', '.rw2']);
@@ -51,7 +54,7 @@ console.log(`📸 Found ${filesToProcess.length} images to process in ${targetDi
 console.log(`⚙️ Execution Mode: ${executionMode}`);
 
 // Load Life List DB
-const lifeListPath = path.join(__dirname, 'life_list.json');
+const lifeListPath = process.env.LIFE_LIST_PATH || path.join(__dirname, 'life_list.json');
 let lifeList = { species_list: [] };
 if (fs.existsSync(lifeListPath)) {
     try {
@@ -74,6 +77,14 @@ const processedDetails = [];
 
 // --- 2. AI Vision API Routing ---
 async function callVisionModel(base64Image, modelName) {
+    if (process.env.MOCK_VISION_JSON) {
+        const mockData = JSON.parse(fs.readFileSync(process.env.MOCK_VISION_JSON, 'utf8'));
+        const responseBirds = mockData.shift() || [];
+        fs.writeFileSync(process.env.MOCK_VISION_JSON, JSON.stringify(mockData));
+        return responseBirds;
+    }
+
+    console.log(`📡 [DEBUG] Sending request to model: ${modelName}`);
     const promptText = `识别画面中所有清晰可见的鸟类主体，并强制返回 JSON 对象。结构约束：{"birds": [{"family": "xx科", "genus": "xx属", "species": "xx鸟", "confidence": 0.95}]}。如果不是鸟类，返回空数组。如果不确定，confidence 填写低于 0.6 的值，并尝试给出最可能的物种，或者填写 '未知鸟类'。`;
 
     const response = await openai.chat.completions.create({
@@ -91,8 +102,9 @@ async function callVisionModel(base64Image, modelName) {
         temperature: 0.2
     });
 
-    const resultText = response.choices[0].message.content;
+    let resultText = response.choices[0].message.content;
     try {
+        resultText = resultText.replace(/```json/g, '').replace(/```/g, '').trim();
         const data = JSON.parse(resultText);
         return data.birds || [];
     } catch (e) {
